@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Manager | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.3); }
+        .subscription-item { border-left: 4px solid #667eea; }
+        .subscription-item.warning { border-left-color: #f59e0b; }
+        .subscription-item.active { border-left-color: #10b981; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-active { background: #10b98133; color: #10b981; }
+        .status-expiring { background: #f59e0b33; color: #f59e0b; }
+        .status-expired { background: #ef444433; color: #ef4444; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-primary:hover { opacity: 0.9; }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 p-6 hidden md:flex flex-col">
+            <div class="text-2xl font-bold mb-10">
+                <i class="fas fa-layer-group text-blue-500 mr-2"></i>SubManager
+            </div>
+            <nav class="space-y-2 flex-grow">
+                <a href="#overview" class="nav-link block px-4 py-3 rounded-lg bg-slate-800 text-blue-400 transition">
+                    <i class="fas fa-chart-line mr-3"></i>Overview
+                </a>
+                <a href="#subscriptions" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i class="fas fa-cube mr-3"></i>My Subscriptions
+                </a>
+                <a href="#billing" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i class="fas fa-credit-card mr-3"></i>Billing History
+                </a>
+                <a href="#profile" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i class="fas fa-user mr-3"></i>Profile Settings
+                </a>
+            </nav>
+            <button onclick="logout()" class="w-full px-4 py-3 text-red-400 hover:bg-red-400/10 rounded-lg transition">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-grow overflow-y-auto">
+            <!-- Header -->
+            <header class="gradient-bg p-8 border-b border-slate-800">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-bold mb-2">Subscription Dashboard</h1>
+                        <p class="text-blue-100">Manage all your subscriptions in one place</p>
+                    </div>
+                    <div class="text-right">
+                        <div id="userName" class="text-2xl font-bold">User</div>
+                        <div id="userEmail" class="text-blue-100 text-sm">Loading...</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <div class="p-8 max-w-7xl mx-auto">
+                <!-- Overview Section -->
+                <section id="overview" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Overview</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Active Subscriptions -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Active Subscriptions</p>
+                                    <p class="text-3xl font-bold" id="activeCount">0</p>
+                                </div>
+                                <div class="bg-green-500/20 p-3 rounded-lg"><i class="fas fa-circle-check text-green-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Renewing Soon -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Renewing Soon</p>
+                                    <p class="text-3xl font-bold" id="renewingCount">0</p>
+                                </div>
+                                <div class="bg-amber-500/20 p-3 rounded-lg"><i class="fas fa-hourglass-end text-amber-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Total Spending -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Monthly Spending</p>
+                                    <p class="text-3xl font-bold" id="spendingAmount">$0</p>
+                                </div>
+                                <div class="bg-blue-500/20 p-3 rounded-lg"><i class="fas fa-dollar-sign text-blue-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Expired -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Expired/Cancelled</p>
+                                    <p class="text-3xl font-bold" id="expiredCount">0</p>
+                                </div>
+                                <div class="bg-red-500/20 p-3 rounded-lg"><i class="fas fa-times-circle text-red-400 text-xl"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Upcoming Renewals Alert -->
+                <section id="alerts" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Action Required</h2>
+                    <div id="alertsContainer" class="space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-lg text-center">
+                            <p class="text-slate-400">No urgent actions needed. All subscriptions are up to date!</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Active Subscriptions -->
+                <section id="subscriptions" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Active Subscriptions</h2>
+                    <div id="subscriptionsList" class="space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 p-8 rounded-lg text-center">
+                            <i class="fas fa-spinner fa-spin text-2xl text-blue-400 mb-4"></i>
+                            <p class="text-slate-400">Loading your subscriptions...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Transactions -->
+                <section id="billing" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Recent Transactions</h2>
+                    <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-slate-800">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Service</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Amount</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsList" class="divide-y divide-slate-800">
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 text-center text-slate-400">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const token = localStorage.getItem('token');
+
+        // Check authentication
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/user/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to load profile');
+                
+                const data = await response.json();
+                document.getElementById('userName').textContent = data.name || data.email;
+                document.getElementById('userEmail').textContent = data.email;
+            } catch (err) {
+                console.error('Error loading profile:', err);
+                document.getElementById('userEmail').textContent = 'Error loading profile';
+            }
+        }
+
+        async function loadSubscriptions() {
+            try {
+                const response = await fetch('/subscriptions/details', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to load subscriptions');
+                
+                const subscriptions = await response.json();
+                renderSubscriptions(subscriptions);
+                updateStats(subscriptions);
+                checkUpcomingRenewals(subscriptions);
+            } catch (err) {
+                console.error('Error loading subscriptions:', err);
+                document.getElementById('subscriptionsList').innerHTML = 
+                    '<div class="bg-slate-900 border border-red-500/20 p-8 rounded-lg text-center"><p class="text-red-400">Error loading subscriptions</p></div>';
+            }
+        }
+
+        function renderSubscriptions(subscriptions) {
+            if (!subscriptions || subscriptions.length === 0) {
+                document.getElementById('subscriptionsList').innerHTML = 
+                    '<div class="bg-slate-900 border border-slate-800 p-8 rounded-lg text-center"><p class="text-slate-400">No active subscriptions yet</p><a href="/dashboard.html" class="text-blue-400 hover:underline mt-2 inline-block">Browse plans</a></div>';
+                return;
+            }
+
+            const html = subscriptions.map(sub => {
+                const renewDate = new Date(sub.nextBillingDate || sub.currentPeriodEnd);
+                const daysUntilRenewal = Math.ceil((renewDate - new Date()) / (1000 * 60 * 60 * 24));
+                const isExpiring = daysUntilRenewal <= 7 && daysUntilRenewal > 0;
+                const isExpired = daysUntilRenewal <= 0;
+
+                let statusClass = 'status-active';
+                let statusText = 'Active';
+                let borderClass = 'subscription-item active';
+
+                if (isExpired) {
+                    statusClass = 'status-expired';
+                    statusText = 'Expired';
+                    borderClass = 'subscription-item';
+                } else if (isExpiring) {
+                    statusClass = 'status-expiring';
+                    statusText = 'Renewing Soon';
+                    borderClass = 'subscription-item warning';
+                }
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 ${borderClass}">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">${sub.subscriptionId || 'Subscription'}</h3>
+                                <div class="text-slate-400 text-sm mb-2">
+                                    <i class="fas fa-check-circle"></i> Subscription ID: ${sub.customerId}
+                                </div>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pt-4 border-t border-slate-800">
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Status</p>
+                                <p class="font-bold text-sm capitalize">${sub.status}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Renewal Date</p>
+                                <p class="font-bold text-sm">${renewDate.toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Days Remaining</p>
+                                <p class="font-bold text-sm">${Math.max(0, daysUntilRenewal)} days</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Auto-Renewal</p>
+                                <p class="font-bold text-sm text-green-400">Enabled</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button onclick="portal()" class="flex-1 btn-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                <i class="fas fa-credit-card mr-2"></i>Manage Billing
+                            </button>
+                            <button onclick="cancelSubscription('${sub.id}')" class="flex-1 border border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('subscriptionsList').innerHTML = html;
+        }
+
+        function updateStats(subscriptions) {
+            if (!subscriptions) subscriptions = [];
+
+            const active = subscriptions.filter(s => s.status === 'active').length;
+            const now = new Date();
+            const renewing = subscriptions.filter(s => {
+                const renewDate = new Date(s.nextBillingDate || s.currentPeriodEnd);
+                const daysLeft = (renewDate - now) / (1000 * 60 * 60 * 24);
+                return daysLeft <= 7 && daysLeft > 0;
+            }).length;
+            const expired = subscriptions.filter(s => s.status === 'cancelled' || s.status === 'expired').length;
+
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('renewingCount').textContent = renewing;
+            document.getElementById('expiredCount').textContent = expired;
+            document.getElementById('spendingAmount').textContent = '$' + (subscriptions.length * 9.99).toFixed(2);
+        }
+
+        function checkUpcomingRenewals(subscriptions) {
+            if (!subscriptions) subscriptions = [];
+
+            const alerts = [];
+            const now = new Date();
+
+            subscriptions.forEach(sub => {
+                const renewDate = new Date(sub.nextBillingDate || sub.currentPeriodEnd);
+                const daysLeft = Math.ceil((renewDate - now) / (1000 * 60 * 60 * 24));
+
+                if (daysLeft <= 3 && daysLeft > 0) {
+                    alerts.push(`
+                        <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-lg flex items-center gap-4">
+                            <i class="fas fa-exclamation-triangle text-amber-400 text-2xl"></i>
+                            <div>
+                                <p class="font-bold text-amber-400">${sub.subscriptionId} renews in ${daysLeft} day${daysLeft > 1 ? 's' : ''}</p>
+                                <p class="text-slate-300 text-sm">On ${renewDate.toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="portal()" class="ml-auto px-4 py-2 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600">Update Billing</button>
+                        </div>
+                    `);
+                } else if (daysLeft <= 0) {
+                    alerts.push(`
+                        <div class="bg-red-500/10 border border-red-500/30 p-4 rounded-lg flex items-center gap-4">
+                            <i class="fas fa-times-circle text-red-400 text-2xl"></i>
+                            <div>
+                                <p class="font-bold text-red-400">${sub.subscriptionId} has expired</p>
+                                <p class="text-slate-300 text-sm">Expired on ${renewDate.toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="renew('${sub.id}')" class="ml-auto px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600">Renew Now</button>
+                        </div>
+                    `);
+                }
+            });
+
+            const alertsContainer = document.getElementById('alertsContainer');
+            if (alerts.length > 0) {
+                alertsContainer.innerHTML = alerts.join('');
+            } else {
+                alertsContainer.innerHTML = '<div class="bg-green-500/10 border border-green-500/30 p-6 rounded-lg text-center"><i class="fas fa-check-circle text-green-400 text-2xl mb-2"></i><p class="text-green-400">No urgent actions needed. All subscriptions are up to date!</p></div>';
+            }
+        }
+
+        function renderTransactions() {
+            const html = `
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-slate-400">
+                        <p>No transactions yet</p>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('transactionsList').innerHTML = html;
+        }
+
+        async function portal() {
+            window.location.href = '/user/subscription-portal';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+
+        function cancelSubscription(subId) {
+            if (confirm('Are you sure you want to cancel this subscription?')) {
+                alert('Cancellation initiated. You will be redirected to manage your subscription.');
+                portal();
+            }
+        }
+
+        function renew(subId) {
+            alert('Renewing your subscription...');
+            portal();
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProfile();
+            loadSubscriptions();
+            renderTransactions();
+            
+            // Refresh every 5 minutes
+            setInterval(loadSubscriptions, 5 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>

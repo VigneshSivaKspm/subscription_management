@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Us | Membership</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen font-['Inter']">
+    <div class="w-full max-w-md p-8 bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold mb-2">Create Account</h1>
+            <p class="text-slate-400">Join the elite membership today</p>
+        </div>
+
+        <form id="registerForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Full Name</label>
+                <input type="text" id="name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="John Doe">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Email Address</label>
+                <input type="email" id="email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="name@company.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Password</label>
+                <input type="password" id="password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="••••••••">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition mt-4 shadow-lg shadow-emerald-500/20">Get Started</button>
+        </form>
+
+        <p class="mt-8 text-center text-slate-400">
+            Already a member? <a href="/login.html" class="text-blue-500 hover:underline">Sign In</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const button = e.target.querySelector('button');
+            
+            button.disabled = true;
+            button.textContent = 'Creating account...';
+
+            try {
+                console.log('Attempting registration...');
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+                console.log('Response:', data);
+
+                if (response.ok) {
+                    alert('Registration successful! Redirecting to login...');
+                    window.location.href = '/login.html';
+                } else {
+                    const errorMessage = data.message || data.error || 'Unknown error';
+                    console.error('Registration error:', errorMessage);
+                    alert('Registration failed: ' + errorMessage);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('An error occurred. Check console for details. Make sure the backend is running on port 5000.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Get Started';
+            }
+        });
+    </script>
+</body>
+</html>
