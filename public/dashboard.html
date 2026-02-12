@@ -267,9 +267,6 @@
                         </div>
 
                         <div class="flex gap-3">
-                            <button onclick="portal()" class="flex-1 btn-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                <i class="fas fa-credit-card mr-2"></i>Manage Billing
-                            </button>
                             <button onclick="cancelSubscription('${sub.id}')" class="flex-1 border border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-800 transition">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </button>
@@ -317,7 +314,7 @@
                                 <p class="font-bold text-amber-400">${sub.subscriptionId} renews in ${daysLeft} day${daysLeft > 1 ? 's' : ''}</p>
                                 <p class="text-slate-300 text-sm">On ${renewDate.toLocaleDateString()}</p>
                             </div>
-                            <button onclick="portal()" class="ml-auto px-4 py-2 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600">Update Billing</button>
+                            <button onclick="alert('This is a demo. No actual renewal needed.'); return false;" class="ml-auto px-4 py-2 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600">View Details</button>
                         </div>
                     `);
                 } else if (daysLeft <= 0) {
@@ -328,7 +325,6 @@
                                 <p class="font-bold text-red-400">${sub.subscriptionId} has expired</p>
                                 <p class="text-slate-300 text-sm">Expired on ${renewDate.toLocaleDateString()}</p>
                             </div>
-                            <button onclick="renew('${sub.id}')" class="ml-auto px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600">Renew Now</button>
                         </div>
                     `);
                 }
@@ -353,10 +349,6 @@
             document.getElementById('transactionsList').innerHTML = html;
         }
 
-        async function portal() {
-            window.location.href = '/user/subscription-portal';
-        }
-
         function logout() {
             localStorage.removeItem('token');
             window.location.href = '/login.html';
@@ -364,14 +356,8 @@
 
         function cancelSubscription(subId) {
             if (confirm('Are you sure you want to cancel this subscription?')) {
-                alert('Cancellation initiated. You will be redirected to manage your subscription.');
-                portal();
+                alert('Subscription cancelled successfully.');
             }
-        }
-
-        function renew(subId) {
-            alert('Renewing your subscription...');
-            portal();
         }
 
         // Load data on page load

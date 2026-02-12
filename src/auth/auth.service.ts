@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { JwtService } from '@nestjs/jwt';
-import { StripeService } from '../payments/stripe.service';
 import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
@@ -9,7 +8,6 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-    private stripeService: StripeService,
     private firebaseService: FirebaseService,
   ) {}
 
@@ -37,20 +35,6 @@ export class AuthService {
         surname: userData.name,
         dateOfBirth: userData.date_of_birth || null,
         gender: userData.gender || null,
-      });
-
-      console.log('User data updated');
-
-      // Create Stripe customer
-      const stripeCustomerId = await this.stripeService.createStripeCustomer(
-        userRecord.email,
-        userData.name,
-      );
-
-      console.log('Stripe customer created:', stripeCustomerId);
-
-      await this.firebaseService.updateUser(userRecord.uid, {
-        stripeCustomerId,
       });
 
       console.log('Registration complete for:', userRecord.uid);
