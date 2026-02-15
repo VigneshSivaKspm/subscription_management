@@ -1,5 +1,5 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { StripeService } from '../payments/stripe.service';
+// import { StripeService } from '../payments/stripe.service'; // Stripe not used in this project
 import { RequestWithUser } from '../auth/types/request-with-user.interface';
 import { SubscriptionService } from './subscription.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -7,14 +7,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('subscriptions')
 export class SubscriptionsController {
   constructor(
-    private readonly stripeService: StripeService,
+    // private readonly stripeService: StripeService, // Stripe not used in this project
     private readonly subscriptionService: SubscriptionService,
   ) {}
 
-  @Get('products')
-  async getAvailableProducts() {
-    return this.stripeService.listProductsAndPrices();
-  }
+  // @Get('products')
+  // async getAvailableProducts() {
+  //   // Stripe not used in this college project
+  //   return this.stripeService.listProductsAndPrices();
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Get('details')

@@ -32,11 +32,25 @@
     </div>
 
     <script>
+        // Hardcoded admin credentials
+        const ADMIN_EMAIL = 'admin@membership.com';
+        const ADMIN_PASSWORD = 'admin@12345';
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
+            // Check if credentials match hardcoded admin credentials
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                localStorage.setItem('token', 'admin_token_' + Date.now());
+                localStorage.setItem('isAdmin', 'true');
+                localStorage.setItem('userEmail', email);
+                window.location.href = '/admin-dashboard.html';
+                return;
+            }
+
+            // Regular user login
             try {
                 const response = await fetch('/auth/login', {
                     method: 'POST',
@@ -47,12 +61,39 @@
                 const data = await response.json();
                 if (response.ok) {
                     localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('isAdmin', 'false');
+                    localStorage.setItem('userEmail', email);
+                    
+                    // Create or update user profile in localStorage
+                    const userProfile = {
+                        name: data.user?.name || email.split('@')[0],
+                        email: email,
+                        phone: '',
+                        country: '',
+                        address: '',
+                        joinDate: new Date().toLocaleDateString()
+                    };
+                    localStorage.setItem(`userProfile_${email}`, JSON.stringify(userProfile));
+                    
                     window.location.href = '/dashboard.html';
                 } else {
                     alert('Login failed: ' + data.message);
                 }
             } catch (err) {
-                alert('An error occurred. Make sure the backend is running.');
+                // Allow local demo login without backend
+                const userProfile = {
+                    name: email.split('@')[0],
+                    email: email,
+                    phone: '',
+                    country: '',
+                    address: '',
+                    joinDate: new Date().toLocaleDateString()
+                };
+                localStorage.setItem(`userProfile_${email}`, JSON.stringify(userProfile));
+                localStorage.setItem('token', 'user_token_' + Date.now());
+                localStorage.setItem('isAdmin', 'false');
+                localStorage.setItem('userEmail', email);
+                window.location.href = '/dashboard.html';
             }
         });
     </script>

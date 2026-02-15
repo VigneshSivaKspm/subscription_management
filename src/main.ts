@@ -13,8 +13,14 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  // Parse JSON for all routes except /webhook
+  app.use(express.json());
+  // Parse URL-encoded data
+  app.use(express.urlencoded({ extended: true }));
+  // For webhook, use raw body parser
   app.use('/webhook', express.raw({ type: 'application/json' }));
+
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   const port = process.env.PORT || 5000;
   await app.listen(port);

@@ -9,7 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .premium-hero { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); }
+        .price-card { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; border: 2px solid rgba(226, 232, 240, 0.1); }
+        .price-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15); border-color: rgba(102, 126, 234, 0.3); }
+        .price-card.most-popular { border-color: #667eea; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%); }
+        .price-card.most-popular::before { content: 'MOST POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .price-card { position: relative; }
+        .feature-item { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #cbd5e1; margin: 12px 0; }
+        .feature-item.included::before { content: '✓'; color: #10b981; font-weight: bold; font-size: 18px; }
+        .feature-item.excluded::before { content: '✗'; color: #ef4444; font-weight: bold; font-size: 18px; }
         .stat-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.3); }
         .subscription-item { border-left: 4px solid #667eea; }
@@ -21,9 +29,33 @@
         .status-expired { background: #ef444433; color: #ef4444; }
         .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .btn-primary:hover { opacity: 0.9; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 24px; border-top: 1px solid #334155; display: flex; gap: 12px; justify-content: flex-end; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
+        .modal-close:hover { color: #fff; }
+        .detail-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1001; align-items: center; justify-content: center; }
+        .detail-modal.active { display: flex; }
+        .detail-content { background: #0f172a; border: 2px solid #667eea; border-radius: 16px; width: 90%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+        .form-input { width: 100%; background: #334155; border: 1px solid #475569; border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; }
+        .form-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .form-input:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-slate-950 text-white">
+    <script>
+        // Check if user is logged in
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+    </script>
     <div class="flex min-h-screen">
         <!-- Sidebar -->
         <aside class="w-64 bg-slate-900 border-r border-slate-800 p-6 hidden md:flex flex-col">
@@ -31,18 +63,30 @@
                 <i class="fas fa-layer-group text-blue-500 mr-2"></i>SubManager
             </div>
             <nav class="space-y-2 flex-grow">
-                <a href="#overview" class="nav-link block px-4 py-3 rounded-lg bg-slate-800 text-blue-400 transition">
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg bg-slate-800 text-blue-400 transition" onclick="showSection(event, 'overview')">
                     <i class="fas fa-chart-line mr-3"></i>Overview
                 </a>
-                <a href="#subscriptions" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition" onclick="showSection(event, 'subscriptions')">
                     <i class="fas fa-cube mr-3"></i>My Subscriptions
                 </a>
-                <a href="#billing" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition" onclick="showSection(event, 'billing')">
                     <i class="fas fa-credit-card mr-3"></i>Billing History
                 </a>
-                <a href="#profile" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition" onclick="showSection(event, 'profile')">
                     <i class="fas fa-user mr-3"></i>Profile Settings
                 </a>
+                <hr class="border-slate-700 my-3">
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition" onclick="generateReport(); return false;">
+                    <i class="fas fa-file-pdf mr-3"></i>Reports & Analytics
+                </a>
+                <a href="#" class="nav-link block px-4 py-3 rounded-lg hover:bg-slate-800 transition" onclick="exportSubscriptionData('csv'); return false;">
+                    <i class="fas fa-download mr-3"></i>Export Data
+                </a>
+                <div id="adminSectionNav" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #374151;">
+                    <a href="/admin-dashboard.html" class="block px-4 py-3 rounded-lg hover:bg-emerald-800/20 text-emerald-400 transition">
+                        <i class="fas fa-crown mr-3"></i>Admin Panel
+                    </a>
+                </div>
             </nav>
             <button onclick="logout()" class="w-full px-4 py-3 text-red-400 hover:bg-red-400/10 rounded-lg transition">
                 <i class="fas fa-sign-out-alt mr-2"></i>Logout
@@ -52,25 +96,90 @@
         <!-- Main Content -->
         <main class="flex-grow overflow-y-auto">
             <!-- Header -->
-            <header class="gradient-bg p-8 border-b border-slate-800">
-                <div class="flex justify-between items-center">
+            <header class="border-b border-slate-800 bg-slate-900/50">
+                <div class="p-6 max-w-7xl mx-auto flex justify-between items-center">
                     <div>
-                        <h1 class="text-4xl font-bold mb-2">Subscription Dashboard</h1>
-                        <p class="text-blue-100">Manage all your subscriptions in one place</p>
+                        <h1 class="text-3xl font-bold">MEMBERSHIP</h1>
                     </div>
-                    <div class="text-right">
-                        <div id="userName" class="text-2xl font-bold">User</div>
-                        <div id="userEmail" class="text-blue-100 text-sm">Loading...</div>
+                    <div class="flex items-center gap-6">
+                        <button onclick="showSection(event, 'subscriptions')" class="text-slate-400 hover:text-white transition font-medium">
+                            <i class="fas fa-user mr-2"></i>Dashboard
+                        </button>
+                        <button onclick="logout()" class="px-4 py-2 border border-slate-700 hover:bg-slate-800 rounded-lg transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
                     </div>
                 </div>
             </header>
 
             <!-- Main Content Area -->
-            <div class="p-8 max-w-7xl mx-auto">
-                <!-- Overview Section -->
-                <section id="overview" class="mb-12">
-                    <h2 class="text-2xl font-bold mb-6">Overview</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="max-w-7xl mx-auto">
+                <!-- Overview Section - Premium Hero Sales Page -->
+                <section id="overview" class="section active premium-hero py-20 px-8">
+                    <div class="text-center mb-16">
+                        <h2 class="text-5xl font-bold mb-4">Unlock Premium Experiences</h2>
+                        <p class="text-xl text-slate-300 max-w-2xl mx-auto">Join our exclusive community and get access to premium tools, deep insights, and a world-class network.</p>
+                    </div>
+
+                    <!-- Pricing Tiers -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                        <!-- Basic Plan -->
+                        <div class="price-card bg-slate-900 rounded-2xl p-8">
+                            <h3 class="text-2xl font-bold mb-2">Basic</h3>
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">₹0</span>
+                                <span class="text-slate-400 ml-2">/mo</span>
+                            </div>
+                            <div class="mb-8 pb-8 border-b border-slate-800">
+                                <div class="feature-item included"><span>Access to free content</span></div>
+                                <div class="feature-item included"><span>Basic community access</span></div>
+                                <div class="feature-item excluded"><span>Premium support</span></div>
+                            </div>
+                            <button onclick="openAddSubscriptionModal()" class="w-full py-3 border border-slate-700 hover:bg-slate-800 rounded-lg font-semibold transition">
+                                Join Free
+                            </button>
+                        </div>
+
+                        <!-- Pro Plan - Most Popular -->
+                        <div class="price-card most-popular bg-slate-900 rounded-2xl p-8">
+                            <h3 class="text-2xl font-bold mb-2">Pro</h3>
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">₹2,499</span>
+                                <span class="text-slate-400 ml-2">/mo</span>
+                            </div>
+                            <div class="mb-8 pb-8 border-b border-slate-800">
+                                <div class="feature-item included"><span>Everything in Basic</span></div>
+                                <div class="feature-item included"><span>Detailed analytics</span></div>
+                                <div class="feature-item included"><span>Priority Email support</span></div>
+                            </div>
+                            <button onclick="openAddSubscriptionModal()" class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-semibold transition text-white">
+                                Upgrade Now
+                            </button>
+                        </div>
+
+                        <!-- Elite Plan -->
+                        <div class="price-card bg-slate-900 rounded-2xl p-8">
+                            <h3 class="text-2xl font-bold mb-2">Elite</h3>
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">₹7,999</span>
+                                <span class="text-slate-400 ml-2">/mo</span>
+                            </div>
+                            <div class="mb-8 pb-8 border-b border-slate-800">
+                                <div class="feature-item included"><span>Everything in Pro</span></div>
+                                <div class="feature-item included"><span>1-on-1 Coaching</span></div>
+                                <div class="feature-item included"><span>API Access</span></div>
+                            </div>
+                            <button onclick="openAddSubscriptionModal()" class="w-full py-3 border border-slate-700 hover:bg-slate-800 rounded-lg font-semibold transition">
+                                Go Elite
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Dashboard Stats Section -->
+                <section class="py-12 px-8 border-t border-slate-800">
+                    <h2 class="text-3xl font-bold mb-8">Your Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
                         <!-- Active Subscriptions -->
                         <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
                             <div class="flex justify-between items-start">
@@ -98,9 +207,9 @@
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-slate-400 text-sm mb-2">Monthly Spending</p>
-                                    <p class="text-3xl font-bold" id="spendingAmount">$0</p>
+                                    <p class="text-3xl font-bold" id="spendingAmount">₹0</p>
                                 </div>
-                                <div class="bg-blue-500/20 p-3 rounded-lg"><i class="fas fa-dollar-sign text-blue-400 text-xl"></i></div>
+                                <div class="bg-blue-500/20 p-3 rounded-lg"><i class="fas fa-indian-rupee text-blue-400 text-xl"></i></div>
                             </div>
                         </div>
 
@@ -115,10 +224,11 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </section>
 
                 <!-- Upcoming Renewals Alert -->
-                <section id="alerts" class="mb-12">
+                <section id="alerts" class="px-8 py-12 border-t border-slate-800">
                     <h2 class="text-2xl font-bold mb-6">Action Required</h2>
                     <div id="alertsContainer" class="space-y-4">
                         <div class="bg-slate-900 border border-slate-800 p-6 rounded-lg text-center">
@@ -128,8 +238,25 @@
                 </section>
 
                 <!-- Active Subscriptions -->
-                <section id="subscriptions" class="mb-12">
-                    <h2 class="text-2xl font-bold mb-6">Active Subscriptions</h2>
+                <section id="subscriptions" class="section px-8 py-12 border-t border-slate-800">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold">My Subscriptions</h2>
+                            <p class="text-slate-400 text-sm mt-1" id="subCount">0 subscriptions</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <input type="text" id="searchInput" placeholder="Search subscriptions..." class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow md:flex-grow-0" onkeyup="filterSubscriptions()">
+                            <select id="filterStatus" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterSubscriptions()">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                            <button onclick="openAddSubscriptionModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap">
+                                <i class="fas fa-plus"></i>Add Subscription
+                            </button>
+                        </div>
+                    </div>
                     <div id="subscriptionsList" class="space-y-4">
                         <div class="bg-slate-900 border border-slate-800 p-8 rounded-lg text-center">
                             <i class="fas fa-spinner fa-spin text-2xl text-blue-400 mb-4"></i>
@@ -139,7 +266,7 @@
                 </section>
 
                 <!-- Recent Transactions -->
-                <section id="billing" class="mb-12">
+                <section id="billing" class="section px-8 py-12 border-t border-slate-800">
                     <h2 class="text-2xl font-bold mb-6">Recent Transactions</h2>
                     <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
                         <table class="w-full">
@@ -161,17 +288,270 @@
                         </table>
                     </div>
                 </section>
+
+                <!-- Profile Settings -->
+                <section id="profile" class="section mb-12">
+                    <h2 class="text-2xl font-bold mb-6">Profile Settings</h2>
+                    <div class="bg-slate-900 border border-slate-800 rounded-lg p-8">
+                        <form id="profileForm" class="space-y-6">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-slate-400 text-sm font-medium mb-2">First Name</label>
+                                    <input type="text" id="firstName" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="John">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-sm font-medium mb-2">Last Name</label>
+                                    <input type="text" id="lastName" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Doe">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-400 text-sm font-medium mb-2">Email Address</label>
+                                <input type="email" id="email" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="john@example.com" readonly>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-slate-400 text-sm font-medium mb-2">Phone</label>
+                                    <input type="tel" id="phone" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="+1-XXX-XXX-XXXX">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-sm font-medium mb-2">Country</label>
+                                    <select id="country" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                        <option value="">Select Country</option>
+                                        <option value="India">India</option>
+                                        <option value="USA">USA</option>
+                                        <option value="UK">UK</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-400 text-sm font-medium mb-2">Address</label>
+                                <input type="text" id="address" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="123 Main St">
+                            </div>
+
+                            <div class="flex gap-4">
+                                <button type="button" onclick="updateProfile()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">
+                                    <i class="fas fa-save mr-2"></i>Save Changes
+                                </button>
+                                <button type="button" onclick="alert('Password change feature coming soon!')" class="px-6 py-3 border border-slate-700 hover:bg-slate-800 rounded-lg font-semibold transition">
+                                    <i class="fas fa-key mr-2"></i>Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
             </div>
         </main>
+    </div>
+
+    <!-- Add/Edit Subscription Modal -->
+    <div id="subscriptionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="text-2xl font-bold" id="modalTitle">Add New Subscription</h2>
+                <button class="modal-close" onclick="closeSubscriptionModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="subscriptionForm" class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Subscription Plan Name *</label>
+                        <input type="text" id="planName" class="form-input" placeholder="e.g., Premium Plan, Netflix, Spotify" required>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Amount ($) *</label>
+                            <input type="number" id="amount" class="form-input" placeholder="9.99" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Billing Cycle *</label>
+                            <select id="billingCycle" class="form-input" required>
+                                <option value="">Select Billing Cycle</option>
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="Quarterly">Quarterly</option>
+                                <option value="Yearly">Yearly</option>
+                                <option value="One-time">One-time</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="description" class="form-input" placeholder="Add notes about this subscription" rows="3"></textarea>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Start Date *</label>
+                            <input type="date" id="startDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Renewal Date *</label>
+                            <input type="date" id="renewalDate" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="status" class="form-input">
+                            <option value="active">Active</option>
+                            <option value="paused">Paused</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group flex items-center gap-3">
+                        <input type="checkbox" id="autoRenewal" checked>
+                        <label for="autoRenewal" class="text-slate-300 cursor-pointer">Enable Auto-Renewal</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeSubscriptionModal()" class="px-6 py-2 border border-slate-700 rounded-lg hover:bg-slate-800 transition">Cancel</button>
+                <button onclick="saveSubscription()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">Save Subscription</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Subscription Details Modal -->
+    <div id="detailModal" class="detail-modal">
+        <div class="detail-content">
+            <div class="p-8 relative">
+                <button class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl" onclick="closeDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <h2 class="text-3xl font-bold mb-6" id="detailTitle">Subscription Details</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">SUBSCRIPTION ID</p>
+                        <p class="text-xl font-bold" id="detailId">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">STATUS</p>
+                        <p class="text-xl font-bold" id="detailStatus">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">AMOUNT</p>
+                        <p class="text-xl font-bold text-emerald-400" id="detailAmount">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">BILLING CYCLE</p>
+                        <p class="text-xl font-bold" id="detailBilling">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">START DATE</p>
+                        <p class="text-xl font-bold" id="detailStart">--</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-2">RENEWAL DATE</p>
+                        <p class="text-xl font-bold text-amber-400" id="detailRenewal">--</p>
+                    </div>
+                </div>
+
+                <div class="mb-8 pb-8 border-b border-slate-700">
+                    <p class="text-slate-500 text-sm mb-2">DESCRIPTION</p>
+                    <p class="text-slate-300" id="detailDescription">No description provided</p>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="closeDetailModal()" class="flex-1 px-4 py-3 border border-slate-600 rounded-lg hover:bg-slate-800 transition font-semibold">
+                        <i class="fas fa-times mr-2"></i>Close
+                    </button>
+                    <button onclick="downloadSubscriptionDetails()" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">
+                        <i class="fas fa-download mr-2"></i>Download Details
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         const API_URL = '/api';
         const token = localStorage.getItem('token');
+        const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
 
         // Check authentication
         if (!token) {
             window.location.href = '/login.html';
+        }
+
+        // Local Storage Management for Subscriptions
+        function getStoredSubscriptions() {
+            const key = `subscriptions_${userEmail}`;
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveStoredSubscriptions(subscriptions) {
+            const key = `subscriptions_${userEmail}`;
+            localStorage.setItem(key, JSON.stringify(subscriptions));
+        }
+
+        function addStoredSubscription(subscription) {
+            const subscriptions = getStoredSubscriptions();
+            subscription.id = subscription.id || 'sub_' + Date.now();
+            subscriptions.push(subscription);
+            saveStoredSubscriptions(subscriptions);
+            return subscription;
+        }
+
+        function updateStoredSubscription(id, updatedData) {
+            let subscriptions = getStoredSubscriptions();
+            subscriptions = subscriptions.map(sub => 
+                sub.id === id ? { ...sub, ...updatedData } : sub
+            );
+            saveStoredSubscriptions(subscriptions);
+        }
+
+        function deleteStoredSubscription(id) {
+            let subscriptions = getStoredSubscriptions();
+            subscriptions = subscriptions.filter(sub => sub.id !== id);
+            saveStoredSubscriptions(subscriptions);
+        }
+
+        // Show/hide sections and update nav
+        function showSection(event, sectionId) {
+            event.preventDefault();
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
+            
+            // Update nav styling
+            updateActiveNav(sectionId);
+        }
+
+        // Update active nav link styling
+        function updateActiveNav(sectionId) {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('bg-slate-800', 'text-blue-400');
+                link.classList.add('hover:bg-slate-800');
+            });
+            
+            // Find and highlight the matching nav link
+            navLinks.forEach(link => {
+                if (link.getAttribute('onclick').includes(sectionId)) {
+                    link.classList.add('bg-slate-800', 'text-blue-400');
+                    link.classList.remove('hover:bg-slate-800');
+                }
+            });
         }
 
         async function fetchProfile() {
@@ -184,20 +564,111 @@
                 const data = await response.json();
                 document.getElementById('userName').textContent = data.name || data.email;
                 document.getElementById('userEmail').textContent = data.email;
+                
+                // Load profile form
+                if (data.name) {
+                    const names = data.name.split(' ');
+                    document.getElementById('firstName').value = names[0] || '';
+                    document.getElementById('lastName').value = names[1] || '';
+                }
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('phone').value = data.phone || '';
+                document.getElementById('address').value = data.address || '';
+                document.getElementById('country').value = data.country || '';
             } catch (err) {
                 console.error('Error loading profile:', err);
                 document.getElementById('userEmail').textContent = 'Error loading profile';
             }
         }
 
+        async function updateProfile() {
+            try {
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const phone = document.getElementById('phone').value;
+                const address = document.getElementById('address').value;
+                const country = document.getElementById('country').value;
+
+                const response = await fetch('/user/profile', {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: firstName + ' ' + lastName,
+                        phone,
+                        address,
+                        country
+                    })
+                });
+                
+                if (response.ok) {
+                    // Save to localStorage for admin panel to see
+                    const userProfile = {
+                        name: firstName + ' ' + lastName,
+                        email: userEmail,
+                        phone: phone,
+                        country: country,
+                        address: address,
+                        joinDate: new Date().toLocaleDateString()
+                    };
+                    localStorage.setItem(`userProfile_${userEmail}`, JSON.stringify(userProfile));
+                    alert('Profile updated successfully!');
+                } else {
+                    // Still save to localStorage even if backend fails
+                    const userProfile = {
+                        name: firstName + ' ' + lastName,
+                        email: userEmail,
+                        phone: phone,
+                        country: country,
+                        address: address,
+                        joinDate: new Date().toLocaleDateString()
+                    };
+                    localStorage.setItem(`userProfile_${userEmail}`, JSON.stringify(userProfile));
+                    alert('Profile updated locally!');
+                }
+            } catch (err) {
+                console.error('Error updating profile:', err);
+                // Save to localStorage anyway
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const phone = document.getElementById('phone').value;
+                const address = document.getElementById('address').value;
+                const country = document.getElementById('country').value;
+                
+                const userProfile = {
+                    name: firstName + ' ' + lastName,
+                    email: userEmail,
+                    phone: phone,
+                    country: country,
+                    address: address,
+                    joinDate: new Date().toLocaleDateString()
+                };
+                localStorage.setItem(`userProfile_${userEmail}`, JSON.stringify(userProfile));
+                alert('Profile saved locally!');
+            }
+        }
+
         async function loadSubscriptions() {
             try {
-                const response = await fetch('/subscriptions/details', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error('Failed to load subscriptions');
+                // Try to load from localStorage first
+                let subscriptions = getStoredSubscriptions();
                 
-                const subscriptions = await response.json();
+                // If no stored subscriptions, try to fetch from API
+                if (!subscriptions || subscriptions.length === 0) {
+                    try {
+                        const response = await fetch('/subscriptions/details', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (response.ok) {
+                            subscriptions = await response.json();
+                        }
+                    } catch (apiErr) {
+                        console.log('API endpoint not available, using local storage');
+                    }
+                }
+                
                 renderSubscriptions(subscriptions);
                 updateStats(subscriptions);
                 checkUpcomingRenewals(subscriptions);
@@ -239,18 +710,26 @@
                     <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 ${borderClass}">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h3 class="text-xl font-bold mb-2">${sub.subscriptionId || 'Subscription'}</h3>
+                                <h3 class="text-xl font-bold mb-2">${sub.planName || sub.subscriptionId || 'Subscription'}</h3>
                                 <div class="text-slate-400 text-sm mb-2">
-                                    <i class="fas fa-check-circle"></i> Subscription ID: ${sub.customerId}
+                                    <i class="fas fa-check-circle"></i> ID: ${sub.id || sub.customerId}
                                 </div>
                             </div>
                             <span class="status-badge ${statusClass}">${statusText}</span>
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pt-4 border-t border-slate-800">
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 pt-4 border-t border-slate-800">
                             <div>
                                 <p class="text-slate-500 text-xs mb-1">Status</p>
-                                <p class="font-bold text-sm capitalize">${sub.status}</p>
+                                <p class="font-bold text-sm capitalize">${sub.status || 'active'}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Amount</p>
+                                <p class="font-bold text-sm">₹${(sub.amount || sub.price || 9.99).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Billing Cycle</p>
+                                <p class="font-bold text-sm">${sub.billingCycle || 'Monthly'}</p>
                             </div>
                             <div>
                                 <p class="text-slate-500 text-xs mb-1">Renewal Date</p>
@@ -260,14 +739,38 @@
                                 <p class="text-slate-500 text-xs mb-1">Days Remaining</p>
                                 <p class="font-bold text-sm">${Math.max(0, daysUntilRenewal)} days</p>
                             </div>
-                            <div>
-                                <p class="text-slate-500 text-xs mb-1">Auto-Renewal</p>
-                                <p class="font-bold text-sm text-green-400">Enabled</p>
+                        </div>
+
+                        <div class="mb-4 pb-4 border-t border-slate-800 pt-4">
+                            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p class="text-slate-500 text-xs mb-1">Start Date</p>
+                                    <p class="text-slate-300">${new Date(sub.startDate || sub.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500 text-xs mb-1">Auto-Renewal</p>
+                                    <p class="text-green-400 font-semibold">${sub.autoRenewal !== false ? 'Enabled' : 'Disabled'}</p>
+                                </div>
+                                ${sub.description ? `<div class="md:col-span-2">
+                                    <p class="text-slate-500 text-xs mb-1">Description</p>
+                                    <p class="text-slate-300">${sub.description}</p>
+                                </div>` : ''}
                             </div>
                         </div>
 
                         <div class="flex gap-3">
-                            <button onclick="cancelSubscription('${sub.id}')" class="flex-1 border border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+                            <button onclick="viewSubscriptionDetails('${sub.id}', '${sub.planName || sub.subscriptionId}', '${sub.status || 'active'}', '${(sub.amount || sub.price || 9.99).toFixed(2)}', '${sub.billingCycle || 'Monthly'}', '${new Date(sub.startDate || sub.createdAt).toLocaleDateString()}', '${renewDate.toLocaleDateString()}', '${sub.description || ''}')" class="flex-1 border border-blue-500/30 bg-blue-500/10 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-500/20 transition font-semibold">
+                                <i class="fas fa-eye mr-2"></i>View Details
+                            </button>
+                            <button onclick="openEditSubscriptionModal('${sub.id}', '${sub.planName || sub.subscriptionId}', '${(sub.amount || sub.price || 9.99).toFixed(2)}', '${sub.billingCycle || 'Monthly'}', '${sub.description || ''}')" class="flex-1 border border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+                                <i class="fas fa-edit mr-2"></i>Edit
+                            </button>
+                            ${sub.status === 'paused' ? `<button onclick="resumeSubscription('${sub.id}')" class="flex-1 border border-green-500/30 bg-green-500/10 text-green-400 px-4 py-2 rounded-lg hover:bg-green-500/20 transition">
+                                <i class="fas fa-play mr-2"></i>Resume
+                            </button>` : `<button onclick="pauseSubscription('${sub.id}')" class="flex-1 border border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+                                <i class="fas fa-pause mr-2"></i>Pause
+                            </button>`}
+                            <button onclick="cancelSubscription('${sub.id}')" class="flex-1 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10 transition">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </button>
                         </div>
@@ -290,10 +793,82 @@
             }).length;
             const expired = subscriptions.filter(s => s.status === 'cancelled' || s.status === 'expired').length;
 
+            // Calculate monthly spending
+            const monthlySpending = subscriptions.reduce((total, sub) => {
+                if (sub.status === 'active' && sub.billingCycle !== 'Yearly' && sub.billingCycle !== 'Quarterly') {
+                    return total + (sub.amount || 0);
+                }
+                return total;
+            }, 0);
+
+            // Calculate yearly spending
+            const yearlySpending = subscriptions.reduce((total, sub) => {
+                if (sub.status === 'active') {
+                    const amount = sub.amount || 0;
+                    if (sub.billingCycle === 'Yearly') {
+                        return total + amount;
+                    } else if (sub.billingCycle === 'Quarterly') {
+                        return total + (amount * 4);
+                    } else if (sub.billingCycle === 'Weekly') {
+                        return total + (amount * 52);
+                    } else if (sub.billingCycle === 'Daily') {
+                        return total + (amount * 365);
+                    } else {
+                        return total + (amount * 12); // Monthly default
+                    }
+                }
+                return total;
+            }, 0);
+
+            // Find most expensive subscription
+            let mostExpensive = { amount: 0, planName: '-' };
+            subscriptions.forEach(sub => {
+                if (sub.status === 'active' && (sub.amount || 0) > mostExpensive.amount) {
+                    mostExpensive = { amount: sub.amount || 0, planName: sub.planName || sub.subscriptionId };
+                }
+            });
+
+            // Calculate potential savings (if all cancelled)
+            const potentialSavings = yearlySpending;
+
+            // Calculate health score
+            const healthScore = calculateHealthScore(subscriptions, yearlySpending);
+
             document.getElementById('activeCount').textContent = active;
             document.getElementById('renewingCount').textContent = renewing;
             document.getElementById('expiredCount').textContent = expired;
-            document.getElementById('spendingAmount').textContent = '$' + (subscriptions.length * 9.99).toFixed(2);
+            document.getElementById('subCount').textContent = subscriptions.length + ' subscription' + (subscriptions.length !== 1 ? 's' : '');
+            document.getElementById('spendingAmount').textContent = '₹' + monthlySpending.toFixed(2);
+            document.getElementById('yearlyAmount').textContent = '₹' + yearlySpending.toFixed(2);
+            document.getElementById('mostExpensive').textContent = '₹' + mostExpensive.amount.toFixed(2);
+            document.getElementById('mostExpensiveName').textContent = mostExpensive.planName;
+            document.getElementById('potentialSavings').textContent = '₹' + potentialSavings.toFixed(2);
+            document.getElementById('healthScore').textContent = healthScore.grade;
+            document.getElementById('healthStatus').textContent = healthScore.status;
+            document.getElementById('healthScore').style.color = healthScore.color;
+        }
+
+        function calculateHealthScore(subscriptions, yearlySpending) {
+            let score = 100;
+            
+            // Deduct for expired/cancelled
+            const expired = subscriptions.filter(s => s.status === 'cancelled' || s.status === 'expired').length;
+            score -= expired * 2;
+            
+            // Deduct for paused
+            const paused = subscriptions.filter(s => s.status === 'paused').length;
+            score -= paused * 1;
+            
+            // Deduct based on yearly spending
+            if (yearlySpending > 50000) score -= 15;
+            else if (yearlySpending > 20000) score -= 10;
+            else if (yearlySpending > 10000) score -= 5;
+            
+            if (score >= 90) return { grade: 'A+', status: 'Excellent', color: '#10b981' };
+            if (score >= 80) return { grade: 'A', status: 'Good', color: '#10b981' };
+            if (score >= 70) return { grade: 'B+', status: 'Fair', color: '#f59e0b' };
+            if (score >= 60) return { grade: 'B', status: 'Needs Attention', color: '#f59e0b' };
+            return { grade: 'C', status: 'Poor', color: '#ef4444' };
         }
 
         function checkUpcomingRenewals(subscriptions) {
@@ -351,20 +926,343 @@
 
         function logout() {
             localStorage.removeItem('token');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('userEmail');
             window.location.href = '/login.html';
         }
 
         function cancelSubscription(subId) {
             if (confirm('Are you sure you want to cancel this subscription?')) {
-                alert('Subscription cancelled successfully.');
+                try {
+                    deleteStoredSubscription(subId);
+                    alert('Subscription cancelled successfully.');
+                    loadSubscriptions();
+                } catch (err) {
+                    console.error('Error cancelling subscription:', err);
+                    alert('Error cancelling subscription.');
+                }
+            }
+        }
+
+        function pauseSubscription(subId) {
+            if (confirm('This will pause the subscription. You can resume it anytime.')) {
+                try {
+                    updateStoredSubscription(subId, { status: 'paused' });
+                    alert('Subscription paused successfully.');
+                    loadSubscriptions();
+                } catch (err) {
+                    console.error('Error pausing subscription:', err);
+                    alert('Error pausing subscription.');
+                }
+            }
+        }
+
+        function resumeSubscription(subId) {
+            if (confirm('Resume this subscription?')) {
+                try {
+                    updateStoredSubscription(subId, { status: 'active' });
+                    alert('Subscription resumed successfully.');
+                    loadSubscriptions();
+                } catch (err) {
+                    console.error('Error resuming subscription:', err);
+                    alert('Error resuming subscription.');
+                }
+            }
+        }
+
+        // Subscription Modal Functions
+        function openAddSubscriptionModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Subscription';
+            document.getElementById('subscriptionForm').reset();
+            document.getElementById('startDate').valueAsDate = new Date();
+            
+            // Set renewal date to 30 days from now
+            const renewalDate = new Date();
+            renewalDate.setDate(renewalDate.getDate() + 30);
+            document.getElementById('renewalDate').valueAsDate = renewalDate;
+            
+            document.getElementById('billingCycle').value = 'Monthly';
+            document.getElementById('subscriptionModal').classList.add('active');
+            document.getElementById('subscriptionModal').dataset.editMode = 'false';
+        }
+
+        function openEditSubscriptionModal(id, planName, amount, billingCycle, description) {
+            document.getElementById('modalTitle').textContent = 'Edit Subscription';
+            document.getElementById('planName').value = planName;
+            document.getElementById('amount').value = amount;
+            document.getElementById('billingCycle').value = billingCycle;
+            document.getElementById('description').value = description;
+            document.getElementById('status').value = 'active';
+            
+            // Get stored subscription for full details
+            const subscriptions = getStoredSubscriptions();
+            const sub = subscriptions.find(s => s.id === id);
+            if (sub) {
+                document.getElementById('startDate').value = sub.startDate;
+                document.getElementById('renewalDate').value = sub.renewalDate;
+                document.getElementById('status').value = sub.status;
+                document.getElementById('autoRenewal').checked = sub.autoRenewal !== false;
+            }
+            
+            document.getElementById('subscriptionModal').classList.add('active');
+            document.getElementById('subscriptionModal').dataset.editMode = 'true';
+            document.getElementById('subscriptionModal').dataset.subId = id;
+        }
+
+        function closeSubscriptionModal() {
+            document.getElementById('subscriptionModal').classList.remove('active');
+            document.getElementById('subscriptionForm').reset();
+        }
+
+        function saveSubscription() {
+            const planName = document.getElementById('planName').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const billingCycle = document.getElementById('billingCycle').value;
+            const description = document.getElementById('description').value.trim();
+            const startDate = document.getElementById('startDate').value;
+            const renewalDate = document.getElementById('renewalDate').value;
+            const status = document.getElementById('status').value;
+            const autoRenewal = document.getElementById('autoRenewal').checked;
+
+            // Validation
+            if (!planName || !amount || !billingCycle || !startDate || !renewalDate) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (new Date(startDate) >= new Date(renewalDate)) {
+                alert('Renewal date must be after start date');
+                return;
+            }
+
+            const isEditMode = document.getElementById('subscriptionModal').dataset.editMode === 'true';
+            const subId = document.getElementById('subscriptionModal').dataset.subId;
+
+            const subscriptionData = {
+                id: isEditMode ? subId : null,
+                planName,
+                amount,
+                billingCycle,
+                description,
+                startDate,
+                renewalDate,
+                status,
+                autoRenewal,
+                createdAt: isEditMode ? null : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                if (isEditMode) {
+                    // Update existing subscription
+                    updateStoredSubscription(subId, subscriptionData);
+                    alert('Subscription updated successfully!');
+                } else {
+                    // Add new subscription
+                    addStoredSubscription(subscriptionData);
+                    alert('Subscription added successfully!');
+                }
+                
+                closeSubscriptionModal();
+                loadSubscriptions();
+            } catch (err) {
+                console.error('Error saving subscription:', err);
+                alert('Error saving subscription. Please try again.');
+            }
+        }
+
+        function viewSubscriptionDetails(id, planName, status, amount, billingCycle, startDate, renewalDate, description) {
+            document.getElementById('detailTitle').textContent = planName || 'Subscription Details';
+            document.getElementById('detailId').textContent = id;
+            document.getElementById('detailStatus').innerHTML = `<span class="px-3 py-1 rounded-full text-sm font-semibold ${status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}">${status.toUpperCase()}</span>`;
+            document.getElementById('detailAmount').textContent = `₹${amount}/${billingCycle}`;
+            document.getElementById('detailBilling').textContent = billingCycle;
+            document.getElementById('detailStart').textContent = startDate;
+            document.getElementById('detailRenewal').textContent = renewalDate;
+            document.getElementById('detailDescription').textContent = description || 'No description provided';
+            
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function downloadSubscriptionDetails() {
+            const title = document.getElementById('detailTitle').textContent;
+            const details = {
+                'Subscription Name': document.getElementById('detailTitle').textContent,
+                'Subscription ID': document.getElementById('detailId').textContent,
+                'Status': document.getElementById('detailStatus').textContent,
+                'Amount/Cycle': document.getElementById('detailAmount').textContent,
+                'Billing Cycle': document.getElementById('detailBilling').textContent,
+                'Start Date': document.getElementById('detailStart').textContent,
+                'Renewal Date': document.getElementById('detailRenewal').textContent,
+                'Description': document.getElementById('detailDescription').textContent,
+                'Downloaded': new Date().toLocaleString()
+            };
+
+            const csv = Object.entries(details)
+                .map(([key, value]) => `"${key}","${value}"`)
+                .join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title.replace(/\s+/g, '_')}_details.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Filter and search subscriptions
+        function filterSubscriptions() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            let subscriptions = getStoredSubscriptions();
+
+            // Apply filters
+            subscriptions = subscriptions.filter(sub => {
+                const matchesSearch = (sub.planName || '').toLowerCase().includes(searchTerm) || 
+                                     (sub.description || '').toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || sub.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            renderSubscriptions(subscriptions);
+        }
+
+        // Export subscription data to CSV
+        function exportSubscriptionData(format) {
+            const subscriptions = getStoredSubscriptions();
+            if (subscriptions.length === 0) {
+                alert('No subscriptions to export');
+                return;
+            }
+
+            if (format === 'csv') {
+                const headers = ['Plan Name', 'Amount', 'Billing Cycle', 'Status', 'Start Date', 'Renewal Date', 'Description'];
+                const csvContent = [
+                    headers.join(','),
+                    ...subscriptions.map(sub => 
+                        [
+                            `"${sub.planName || ''}"`,
+                            `₹${sub.amount || 0}`,
+                            `"${sub.billingCycle || ''}"`,
+                            `"${sub.status || 'active'}"`,
+                            `"${sub.startDate || ''}"`,
+                            `"${sub.renewalDate || ''}"`,
+                            `"${(sub.description || '').replace(/"/g, '""')}""`
+                        ].join(',')
+                    )
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `subscriptions_${new Date().toISOString().split('T')[0]}.csv`);
+                link.click();
+            }
+        }
+
+        // Generate comprehensive report
+        function generateReport() {
+            const subscriptions = getStoredSubscriptions();
+            const now = new Date();
+
+            // Calculate stats
+            const active = subscriptions.filter(s => s.status === 'active').length;
+            const paused = subscriptions.filter(s => s.status === 'paused').length;
+            const expired = subscriptions.filter(s => s.status === 'cancelled' || s.status === 'expired').length;
+
+            const monthlySpending = subscriptions.reduce((total, sub) => {
+                if (sub.status === 'active' && sub.billingCycle !== 'Yearly' && sub.billingCycle !== 'Quarterly') {
+                    return total + (sub.amount || 0);
+                }
+                return total;
+            }, 0);
+
+            const yearlySpending = subscriptions.reduce((total, sub) => {
+                if (sub.status === 'active') {
+                    const amount = sub.amount || 0;
+                    if (sub.billingCycle === 'Yearly') {
+                        return total + amount;
+                    } else if (sub.billingCycle === 'Quarterly') {
+                        return total + (amount * 4);
+                    } else if (sub.billingCycle === 'Weekly') {
+                        return total + (amount * 52);
+                    } else if (sub.billingCycle === 'Daily') {
+                        return total + (amount * 365);
+                    } else {
+                        return total + (amount * 12);
+                    }
+                }
+                return total;
+            }, 0);
+
+            const reportContent = `
+SUBSCRIPTION MANAGEMENT REPORT
+${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}
+
+SUMMARY STATISTICS
+====================
+Total Subscriptions: ${subscriptions.length}
+Active Subscriptions: ${active}
+Paused Subscriptions: ${paused}
+Expired/Cancelled: ${expired}
+
+FINANCIAL SUMMARY
+====================
+Monthly Spending: ₹${monthlySpending.toFixed(2)}
+Yearly Spending: ₹${yearlySpending.toFixed(2)}
+Average per Subscription: ₹${(yearlySpending / (active || 1)).toFixed(2)}/year
+
+SUBSCRIPTION DETAILS
+====================
+${subscriptions.map((sub, idx) => `
+${idx + 1}. ${sub.planName || 'Unnamed'}
+   Amount: ₹${sub.amount || 0} (${sub.billingCycle})
+   Status: ${sub.status}
+   Start Date: ${sub.startDate}
+   Renewal Date: ${sub.renewalDate}
+   Description: ${sub.description || 'N/A'}
+`).join('')}
+
+Generated on ${new Date().toLocaleString()}
+`;
+
+            const blob = new Blob([reportContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `subscription_report_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('Report generated and downloaded successfully!');
+        }
+
+        // Check if user is admin and show admin section
+        function checkAdminStatus() {
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            if (isAdmin) {
+                document.getElementById('adminSectionNav').style.display = 'block';
+                document.getElementById('adminBadge').style.display = 'inline-block';
             }
         }
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
+            checkAdminStatus();
             fetchProfile();
             loadSubscriptions();
             renderTransactions();
+            updateActiveNav('overview');
             
             // Refresh every 5 minutes
             setInterval(loadSubscriptions, 5 * 60 * 1000);

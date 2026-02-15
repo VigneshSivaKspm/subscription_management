@@ -8,6 +8,7 @@ export class User {
   dateOfBirth?: Date;
   gender?: string;
   role: string;
+  status?: string;
   stripeCustomerId?: string;
 
   @Exclude()
@@ -24,6 +25,7 @@ export class User {
     this.dateOfBirth = data.dateOfBirth;
     this.gender = data.gender;
     this.role = data.role || 'user';
+    this.status = data.status;
     this.stripeCustomerId = data.stripeCustomerId;
     this.password = data.password;
     this.createdAt = data.createdAt || new Date();

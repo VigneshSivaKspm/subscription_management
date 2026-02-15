@@ -40,7 +40,8 @@ export class FirebaseService implements OnModuleInit {
     data?: any,
   ): Promise<any> {
     try {
-      const url = `${this.baseUrl}${path}?key=${this.apiKey}`;
+      const separator = path.includes('?') ? '&' : '?';
+      const url = `${this.baseUrl}${path}${separator}key=${this.apiKey}`;
       const options: RequestInit = {
         method,
         headers: { 'Content-Type': 'application/json' },

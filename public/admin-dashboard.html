@@ -6,113 +6,372 @@
     <title>Admin Dashboard | Membership</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.3); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
+        .modal-close:hover { color: #fff; }
+    </style>
 </head>
 <body class="bg-slate-950 text-white font-['Inter'] min-h-screen">
-    <div class="flex">
+    <script>
+        // Hardcoded admin credentials for verification
+        const ADMIN_EMAIL = 'admin@membership.com';
+        
+        // Check if user is logged in and is admin
+        const token = localStorage.getItem('token');
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (!token || !isAdmin || userEmail !== ADMIN_EMAIL) {
+            // Redirect to login if not authorized
+            window.location.href = '/login.html';
+        }
+
+        // Retrieve all users from localStorage
+        function getAllUsers() {
+            const users = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('userProfile_')) {
+                    const emailKey = key.replace('userProfile_', '');
+                    const userData = JSON.parse(localStorage.getItem(key));
+                    const subscriptions = JSON.parse(localStorage.getItem(`subscriptions_${emailKey}`)) || [];
+                    
+                    users.push({
+                        email: emailKey,
+                        name: userData.name || 'N/A',
+                        phone: userData.phone || '-',
+                        country: userData.country || '-',
+                        address: userData.address || '-',
+                        subscriptions: subscriptions.length,
+                        yearlySpending: calculateYearlySpending(subscriptions),
+                        activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
+                        joinDate: userData.joinDate || new Date().toLocaleDateString()
+                    });
+                }
+            }
+            return users;
+        }
+
+        function calculateYearlySpending(subscriptions) {
+            if (!subscriptions || subscriptions.length === 0) return 0;
+            return subscriptions.reduce((total, sub) => {
+                if (sub.status === 'active') {
+                    const amount = sub.amount || 0;
+                    if (sub.billingCycle === 'Yearly') {
+                        return total + amount;
+                    } else if (sub.billingCycle === 'Quarterly') {
+                        return total + (amount * 4);
+                    } else if (sub.billingCycle === 'Weekly') {
+                        return total + (amount * 52);
+                    } else if (sub.billingCycle === 'Daily') {
+                        return total + (amount * 365);
+                    } else {
+                        return total + (amount * 12);
+                    }
+                }
+                return total;
+            }, 0);
+        }
+    </script>
+    <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 min-h-screen bg-slate-900 border-r border-slate-800 p-6">
-            <div class="text-xl font-bold text-emerald-500 mb-10 italic">ADMIN PANEL</div>
-            <nav class="space-y-4">
-                <a href="#" class="block bg-slate-800 px-4 py-2 rounded-lg text-emerald-400">Users Overview</a>
-                <a href="#" class="block px-4 py-2 hover:bg-slate-800 rounded-lg transition">Products</a>
-                <a href="#" class="block px-4 py-2 hover:bg-slate-800 rounded-lg transition">Logs</a>
-                <button onclick="logout()" class="block w-full text-left px-4 py-2 text-red-400 hover:bg-red-400/10 rounded-lg transition mt-20">Logout</button>
+        <aside class="w-64 min-h-screen bg-slate-900 border-r border-slate-800 p-6 hidden md:flex flex-col">
+            <div class="text-2xl font-bold mb-10">
+                <i class="fas fa-crown text-emerald-500 mr-2"></i>AdminPanel
+            </div>
+            <nav class="space-y-2 flex-grow">
+                <a href="#" class="block bg-slate-800 px-4 py-3 rounded-lg text-emerald-400 transition">
+                    <i class="fas fa-users mr-3"></i>Users Overview
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">
+                    <i class="fas fa-chart-bar mr-3"></i>Statistics
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">
+                    <i class="fas fa-file-alt mr-3"></i>Reports
+                </a>
+                <a href="/dashboard.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">
+                    <i class="fas fa-arrow-left mr-3"></i>Back to Dashboard
+                </a>
             </nav>
+            <button onclick="logoutAdmin()" class="w-full px-4 py-3 text-red-400 hover:bg-red-400/10 rounded-lg transition">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-grow p-10">
-            <header class="flex justify-between items-center mb-10">
-                <h1 class="text-3xl font-bold italic">Global Users Overview</h1>
-                <div class="flex gap-4">
-                    <div class="bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-xl">
-                        <span class="text-slate-500 text-xs block">Total Users</span>
-                        <span class="text-xl font-bold" id="totalUsers">--</span>
+        <main class="flex-grow overflow-y-auto">
+            <!-- Header -->
+            <header class="gradient-bg p-8 border-b border-slate-800">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-4xl font-bold mb-2">Admin Dashboard</h1>
+                        <p class="text-blue-100">System Administration & User Management</p>
+                    </div>
+                    <div class="text-right">
+                        <div id="adminName" class="text-2xl font-bold">Admin</div>
+                        <div class="text-blue-100 text-sm">admin@membership.com</div>
                     </div>
                 </div>
             </header>
 
-            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-800/50">
-                        <tr>
-                            <th class="p-4 text-slate-400 font-medium">Name</th>
-                            <th class="p-4 text-slate-400 font-medium">Email</th>
-                            <th class="p-4 text-slate-400 font-medium">Role</th>
-                            <th class="p-4 text-slate-400 font-medium">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTable">
-                        <!-- Users will be loaded here -->
-                        <tr>
-                            <td colspan="4" class="p-10 text-center text-slate-500 italic">Loading users...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Main Content Area -->
+            <div class="p-8 max-w-7xl mx-auto">
+                <!-- Quick Stats -->
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6">System Overview</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Total Users -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Total Users</p>
+                                    <p class="text-3xl font-bold" id="totalUsers">0</p>
+                                </div>
+                                <div class="bg-blue-500/20 p-3 rounded-lg"><i class="fas fa-users text-blue-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Active Subscriptions -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Total Subscriptions</p>
+                                    <p class="text-3xl font-bold" id="totalSubs">0</p>
+                                </div>
+                                <div class="bg-green-500/20 p-3 rounded-lg"><i class="fas fa-check-circle text-green-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Total Revenue -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Total Revenue</p>
+                                    <p class="text-3xl font-bold" id="totalRevenue">₹0</p>
+                                </div>
+                                <div class="bg-emerald-500/20 p-3 rounded-lg"><i class="fas fa-indian-rupee text-emerald-400 text-xl"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Active Users -->
+                        <div class="stat-card bg-slate-900 p-6 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-slate-400 text-sm mb-2">Active Users</p>
+                                    <p class="text-3xl font-bold" id="activeUsers">0</p>
+                                </div>
+                                <div class="bg-orange-500/20 p-3 rounded-lg"><i class="fas fa-chart-line text-orange-400 text-xl"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Users Table -->
+                <section class="mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Registered Users</h2>
+                        <input type="text" id="searchUsers" placeholder="Search users by name or email..." class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" onkeyup="filterUsers()">
+                    </div>
+                    <div class="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-800/50">
+                                <tr>
+                                    <th class="p-4 text-slate-400 font-medium">Name</th>
+                                    <th class="p-4 text-slate-400 font-medium">Email</th>
+                                    <th class="p-4 text-slate-400 font-medium">Subscriptions</th>
+                                    <th class="p-4 text-slate-400 font-medium">Active Subs</th>
+                                    <th class="p-4 text-slate-400 font-medium">Yearly Spending</th>
+                                    <th class="p-4 text-slate-400 font-medium">Join Date</th>
+                                    <th class="p-4 text-slate-400 font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTable" class="divide-y divide-slate-800">
+                                <tr>
+                                    <td colspan="7" class="p-10 text-center text-slate-400">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Loading users...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
 
-    <script>
-        const token = localStorage.getItem('token');
+    <!-- User Details Modal -->
+    <div id="userModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="text-2xl font-bold" id="modalTitle">User Details</h2>
+                <button class="modal-close" onclick="closeUserModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <p class="text-slate-500 text-sm mb-1">Full Name</p>
+                        <p class="text-lg font-semibold" id="modalName">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-1">Email</p>
+                        <p class="text-lg font-semibold" id="modalEmail">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-1">Phone</p>
+                        <p class="text-lg font-semibold" id="modalPhone">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm mb-1">Country</p>
+                        <p class="text-lg font-semibold" id="modalCountry">-</p>
+                    </div>
+                </div>
+                <div class="mb-6 pb-6 border-t border-slate-700 pt-6">
+                    <p class="text-slate-500 text-sm mb-2">Address</p>
+                    <p class="text-slate-300" id="modalAddress">-</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4 mb-6 pb-6 border-t border-slate-700 pt-6">
+                    <div>
+                        <p class="text-slate-500 text-xs mb-1">Total Subscriptions</p>
+                        <p class="text-2xl font-bold text-blue-400" id="modalTotalSubs">0</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-xs mb-1">Active Subscriptions</p>
+                        <p class="text-2xl font-bold text-green-400" id="modalActiveSubs">0</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-xs mb-1">Yearly Spending</p>
+                        <p class="text-2xl font-bold text-emerald-400" id="modalSpending">₹0</p>
+                    </div>
+                </div>
+                <div id="userSubscriptions" class="pb-6 border-t border-slate-700 pt-6">
+                    <p class="text-slate-500 text-sm mb-4 font-semibold">Subscriptions</p>
+                    <div id="subsList" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        async function fetchUsers() {
-            if (!token) {
-                // Show clean data for Admin View
-                document.getElementById('totalUsers').textContent = '24';
-                const dummyUsers = [
-                    { name: 'Admin', email: 'admin@system.com', role: 'admin' },
-                    { name: 'John Doe', email: 'john@example.com', role: 'user' },
-                    { name: 'Jane Smith', email: 'jane@example.com', role: 'user' }
-                ];
-                renderUsers(dummyUsers);
-                return;
-            }
-            try {
-                const response = await fetch('/admin/users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error();
-                
-                const users = await response.json();
-                document.getElementById('totalUsers').textContent = users.length;
-                renderUsers(users);
-            } catch (err) {
-                // Fallback to clean view if unauthorized
-                document.getElementById('totalUsers').textContent = '24';
-                const dummyUsers = [
-                    { name: 'Admin', email: 'admin@system.com', role: 'admin' },
-                    { name: 'John Doe', email: 'john@example.com', role: 'user' },
-                    { name: 'Jane Smith', email: 'jane@example.com', role: 'user' }
-                ];
-                renderUsers(dummyUsers);
-            }
-        }
+    <script>
+        let allUsers = [];
 
         function renderUsers(users) {
             const tableBody = document.getElementById('userTable');
+            
+            if (!users || users.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400">No users found</td></tr>';
+                return;
+            }
+
             tableBody.innerHTML = users.map(user => `
-                <tr class="border-t border-slate-800 hover:bg-white/5 transition">
-                    <td class="p-4 font-semibold text-slate-300 italic">${user.name || 'N/A'}</td>
+                <tr class="border-slate-800 hover:bg-white/5 transition">
+                    <td class="p-4 font-semibold text-slate-300">${user.name}</td>
                     <td class="p-4 text-slate-400">${user.email}</td>
                     <td class="p-4">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest ${user.role === 'admin' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}">
-                            ${user.role.toUpperCase()}
-                        </span>
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-500/10 text-blue-400">${user.subscriptions}</span>
                     </td>
                     <td class="p-4">
-                        <button class="text-slate-500 hover:text-white transition text-xs font-bold uppercase tracking-tighter">Details</button>
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold ${user.activeSubscriptions > 0 ? 'bg-green-500/10 text-green-400' : 'bg-slate-700 text-slate-400'}">${user.activeSubscriptions}</span>
+                    </td>
+                    <td class="p-4 font-semibold text-emerald-400">₹${user.yearlySpending.toFixed(2)}</td>
+                    <td class="p-4 text-slate-400">${user.joinDate}</td>
+                    <td class="p-4">
+                        <button onclick="viewUserDetails('${user.email}')" class="text-blue-400 hover:text-blue-300 transition text-sm font-bold">
+                            <i class="fas fa-eye mr-1"></i>View
+                        </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/index.html';
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchUsers').value.toLowerCase();
+            const filtered = allUsers.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) || 
+                user.email.toLowerCase().includes(searchTerm)
+            );
+            renderUsers(filtered);
         }
 
-        fetchUsers();
+        function viewUserDetails(email) {
+            const user = allUsers.find(u => u.email === email);
+            if (!user) return;
+
+            document.getElementById('modalTitle').textContent = `${user.name} - Details`;
+            document.getElementById('modalName').textContent = user.name;
+            document.getElementById('modalEmail').textContent = email;
+            document.getElementById('modalPhone').textContent = user.phone;
+            document.getElementById('modalCountry').textContent = user.country;
+            document.getElementById('modalAddress').textContent = user.address;
+            document.getElementById('modalTotalSubs').textContent = user.subscriptions;
+            document.getElementById('modalActiveSubs').textContent = user.activeSubscriptions;
+            document.getElementById('modalSpending').textContent = '₹' + user.yearlySpending.toFixed(2);
+
+            // Load subscriptions
+            const subscriptions = JSON.parse(localStorage.getItem(`subscriptions_${email}`)) || [];
+            const subsList = document.getElementById('subsList');
+            
+            if (subscriptions.length === 0) {
+                subsList.innerHTML = '<p class="text-slate-500 text-sm">No subscriptions</p>';
+            } else {
+                subsList.innerHTML = subscriptions.map(sub => `
+                    <div class="bg-slate-800/50 p-3 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold">${sub.planName || 'Unnamed'}</p>
+                                <p class="text-slate-400 text-sm">₹${sub.amount || 0} / ${sub.billingCycle}</p>
+                            </div>
+                            <span class="px-2 py-1 bg-${sub.status === 'active' ? 'green' : 'slate'}-500/20 text-${sub.status === 'active' ? 'green' : 'slate'}-400 text-xs font-bold rounded">${sub.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        function updateStats() {
+            const totalUsers = allUsers.length;
+            const totalSubs = allUsers.reduce((sum, u) => sum + u.subscriptions, 0);
+            const totalRevenue = allUsers.reduce((sum, u) => sum + u.yearlySpending, 0);
+            const activeUsers = allUsers.filter(u => u.activeSubscriptions > 0).length;
+
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('totalSubs').textContent = totalSubs;
+            document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toFixed(2);
+            document.getElementById('activeUsers').textContent = activeUsers;
+        }
+
+        function loadUsers() {
+            allUsers = getAllUsers();
+            renderUsers(allUsers);
+            updateStats();
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/login.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+        });
     </script>
 </body>
 </html>
